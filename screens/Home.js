@@ -17,11 +17,15 @@ import {login, loginSuccess, logout} from '../redux/Login.action';
 import {connect} from 'react-redux';
 import AuthService from '../redux/AuthService';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import {textColor} from '../style/styles';
+import CustomModal from '../components/Modal';
+import {TextInput} from 'react-native-gesture-handler';
 
 const HomeScreen = props => {
   const [data, setData] = useState(undefined);
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedData, setSelectedData] = useState(undefined);
+  const [unmutilated, setUnmutilated] = useState(undefined);
 
   const logOutApi = async () => {
     // console.log(props);
@@ -44,7 +48,12 @@ const HomeScreen = props => {
         'https://jsonplaceholder.typicode.com/users',
       );
       const json = await response.json();
-      setData(json);
+      const temp = json.sort(function (a, b) {
+        return a.name[0] > b.name[0] ? 1 : -1;
+      });
+      console.log(temp);
+      setData(temp);
+      setUnmutilated(temp);
     } catch (error) {
       console.error(error);
     }
@@ -53,6 +62,7 @@ const HomeScreen = props => {
   useEffect(() => {
     getMoviesFromApiAsync();
   }, []);
+
   const storeData = async value => {
     try {
       const jsonValue = JSON.stringify(value);
@@ -63,15 +73,14 @@ const HomeScreen = props => {
     }
   };
 
-  const getData = async () => {
-    try {
-      const value = await AsyncStorage.getItem('@token');
-      if (value !== null) {
-        console.log('token saved==', value);
-      }
-    } catch (e) {
-      // error reading value
-    }
+  const filter = value => {
+    console.log(value);
+    var re = new RegExp(value + '.+$', 'i');
+    const temp = unmutilated.filter(function (e, i, a) {
+      return e.name.search(re) != -1;
+    });
+    console.log(temp);
+    setData(temp);
   };
   return (
     <View style={styles.container}>
@@ -80,6 +89,14 @@ const HomeScreen = props => {
         <View style={styles.button}>
           <Button title="Logout" color="#5e0d24" onPress={logOutApi} />
         </View>
+      </View>
+      <View style={styles.search}>
+        <TextInput
+          placeholder="Search by name..."
+          placeholderTextColor={'white'}
+          style={styles.searchText}
+          onChangeText={filter}
+        />
       </View>
       <FlatList
         data={data}
@@ -107,43 +124,17 @@ const HomeScreen = props => {
             </View>
           </View>
         )}
-        ListFooterComponent={() => <View style={{marginBottom: 55}}></View>}
+        ListFooterComponent={() => <View style={{marginBottom: 100}}></View>}
       />
-
       {selectedData && (
-        <Modal
-          animationType="fade"
-          transparent={true}
-          visible={modalVisible}
+        <CustomModal
+          selectedData={selectedData}
+          modalVisible={modalVisible}
           onRequestClose={() => {
             setModalVisible(!modalVisible);
-          }}>
-          <View style={styles.centeredView}>
-            <View style={styles.modalView}>
-              <Text style={styles.modalText}>Name : {selectedData.name}</Text>
-              <Text style={styles.modalText}>Id : {selectedData.id}</Text>
-              <Text style={styles.modalText}>Email : {selectedData.email}</Text>
-              <Text style={styles.modalText}>Phone : {selectedData.phone}</Text>
-              <Text style={styles.modalText}>
-                UserName : {selectedData.username}
-              </Text>
-              <Text style={styles.modalText}>
-                Website : {selectedData.website}
-              </Text>
-
-              <Pressable
-                style={{
-                  borderRadius: 20,
-                  padding: 10,
-                  elevation: 2,
-                  ...styles.buttonClose,
-                }}
-                onPress={() => setModalVisible(!modalVisible)}>
-                <Text style={styles.textStyle}>Close</Text>
-              </Pressable>
-            </View>
-          </View>
-        </Modal>
+          }}
+          onPress={() => setModalVisible(!modalVisible)}
+        />
       )}
     </View>
   );
@@ -177,6 +168,7 @@ const styles = StyleSheet.create({
     fontStyle: 'italic',
     fontWeight: 'bold',
     marginLeft: 10,
+    color: textColor,
   },
   listItem: {
     flex: 1,
@@ -188,20 +180,25 @@ const styles = StyleSheet.create({
     width: 50,
     height: 50,
     borderRadius: 50,
+    color: textColor,
     marginRight: 10,
   },
   name: {
     fontSize: 15,
+    color: textColor,
     fontWeight: '500',
   },
   email: {
+    color: textColor,
     fontSize: 13,
   },
   viewButton: {
+    color: textColor,
     marginLeft: 30,
   },
   button: {
     alignSelf: 'center',
+    color: textColor,
     marginLeft: '30%',
   },
 
@@ -236,7 +233,19 @@ const styles = StyleSheet.create({
   },
   modalText: {
     marginBottom: 15,
+    color: textColor,
     textAlign: 'center',
+  },
+  search: {
+    backgroundColor: '#c8cbcf',
+    borderRadius: 20,
+    marginVertical: 15,
+    fontSize: 12,
+  },
+  searchText: {
+    fontSize: 18,
+    paddingLeft: 10,
+    color: 'white',
   },
 });
 export default connect(mapStateToProps, mapDispatchToProps)(HomeScreen);

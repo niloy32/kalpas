@@ -7,11 +7,15 @@ import {
   Button,
   View,
   TextInput,
+  Image,
 } from 'react-native';
 import {connect} from 'react-redux';
 import {login, loginFail, loginSuccess} from '../redux/Login.action';
 import AuthService from '../redux/AuthService';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import {textColor} from '../style/styles';
+import Text_input from '../components/Text_input';
+import Logo from '../images/Logo.png';
 const LoginScreen = props => {
   const [loginCredentials, setLoginCredentials] = useState({
     email: '',
@@ -83,21 +87,25 @@ const LoginScreen = props => {
   }, []);
   return (
     <View style={styles.container}>
-      <Text style={styles.text}>Enter Email and pass</Text>
-      {/* Input Field Start */}
-      <TextInput
-        placeholder="Email"
-        onChangeText={value =>
-          setLoginCredentials({...loginCredentials, email: value})
-        }
+      <Image
+        source={require('../images/Logo.png')}
+        style={styles.image}
+        resizeMode="contain"
       />
-      <TextInput
+      <Text style={styles.text}>Enter your credentials</Text>
+      {/* Input Field Start */}
+      <Text_input
+        placeholder="Email"
+        onChangeText={value => {
+          setLoginCredentials({...loginCredentials, email: value});
+        }}
+      />
+      <Text_input
         placeholder="password"
+        secureTextEntry={true}
         onChangeText={value =>
           setLoginCredentials({...loginCredentials, password: value})
         }
-        textContentType="password"
-        secureTextEntry={true}
       />
       {/* Input Field End */}
       <Button title="Login" color="#841584" onPress={loginAPi} />
@@ -130,5 +138,19 @@ const styles = StyleSheet.create({
   },
   text: {
     fontSize: 20,
+    color: textColor,
+    marginBottom: 20,
+  },
+  textInput: {
+    color: textColor,
+  },
+  textInput_box: {
+    borderBottomColor: textColor,
+    borderBottomWidth: 1,
+    marginBottom: 10,
+  },
+  image: {
+    height: 100,
+    width: 200,
   },
 });
