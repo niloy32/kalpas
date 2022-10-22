@@ -1,21 +1,29 @@
 import React from 'react';
-import {
-  SafeAreaView,
-  ScrollView,
-  StatusBar,
-  StyleSheet,
-  Text,
-  useColorScheme,
-  View,
-} from 'react-native';
-import {useSelector, useDispatch} from 'react-redux';
-import {authSelector} from './redux/authSlice';
+import {StyleSheet} from 'react-native';
 import Login from './screens/LoginScreen.js';
 import Home from './screens/Home.js';
 import {NavigationContainer} from '@react-navigation/native';
 import {createNativeStackNavigator} from '@react-navigation/native-stack';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 const App = () => {
   const Stack = createNativeStackNavigator();
+  const [loggedIn, setLoggedIn] = React.useState(false);
+  const checkLocalStorage = async () => {
+    try {
+      const value = await AsyncStorage.getItem('@token');
+      if (value !== null) {
+        const parseValue = JSON.parse(value);
+        setLoggedIn(true);
+      } else {
+        setLoggedIn(false);
+      }
+    } catch (e) {
+      console.log('error app', e);
+    }
+  };
+  React.useEffect(() => {
+    checkLocalStorage();
+  }, [AsyncStorage]);
   return (
     <NavigationContainer>
       <Stack.Navigator screenOptions={{headerShown: false}}>

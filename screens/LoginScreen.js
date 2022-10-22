@@ -1,8 +1,6 @@
 import {bindActionCreators} from '@reduxjs/toolkit';
 import React, {useState, useEffect} from 'react';
 import {
-  SafeAreaView,
-  ScrollView,
   ToastAndroid,
   StyleSheet,
   Text,
@@ -10,42 +8,79 @@ import {
   View,
   TextInput,
 } from 'react-native';
-import {connect, useDispatch} from 'react-redux';
+import {connect} from 'react-redux';
 import {login, loginFail, loginSuccess} from '../redux/Login.action';
-import store from '../redux/store';
-import AppState from '../redux/AppState';
 import AuthService from '../redux/AuthService';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 const LoginScreen = props => {
   const [loginCredentials, setLoginCredentials] = useState({
     email: '',
     password: '',
   });
-  const dispatch = useDispatch();
+  const [loginState, setLoginState] = useState('');
+  const errorLogins = () => {
+    ToastAndroid.showWithGravityAndOffset(
+      'Enter Valid Email or Password',
+      ToastAndroid.LONG,
+      ToastAndroid.BOTTOM,
+      25,
+      50,
+    );
+  };
   const loginAPi = async () => {
-    console.log(props);
-    props.login();
+    if (loginCredentials.email && loginCredentials.password) {
+      props.login();
+    } else {
+      errorLogins();
+    }
   };
 
-  const [loginState, setLoginState] = useState('');
+  const saveToLocalStorage = async value => {
+    try {
+      const jsonValue = JSON.stringify(value);
+      await AsyncStorage.setItem('@token', jsonValue);
+    } catch (e) {}
+  };
+  const checkLocalStorage = async () => {
+    try {
+      const value = await AsyncStorage.getItem('@token');
+      if (value !== null) {
+        const parseValue = JSON.parse(value);
+        AuthService.login(parseValue.email, parseValue.password)
+          .then(user => {
+            props.loginSuccess(user);
+            setLoginState('Login Successful');
+            saveToLocalStorage(user);
+          })
+          .catch(error => {
+            console.log(error);
+            errorLogins();
+            props.loginFail(error);
+          });
+      }
+    } catch (e) {}
+  };
   useEffect(() => {
     AuthService.login(loginCredentials.email, loginCredentials.password)
       .then(user => {
-        console.log('promise?', user);
         props.loginSuccess(user);
-        setLoginState('Login Successful');
+        saveToLocalStorage(user);
       })
-      .catch(e => {
-        setLoginState('invalid email or password');
+      .catch(error => {
+        console.log('error==', error);
+        errorLogins();
+        props.loginFailure(error);
       });
   }, [props.loginState?.isLoggingIn]);
 
   useEffect(() => {
-    console.log('props after click', props);
     if (props.loginState?.isLoggedIn) {
-      console.log('successfully logged in');
       props.navigation.navigate('Home');
     }
   }, [props.loginState?.isLoggedIn]);
+  useEffect(() => {
+    checkLocalStorage();
+  }, []);
   return (
     <View style={styles.container}>
       <Text style={styles.text}>Enter Email and pass</Text>
