@@ -11,7 +11,7 @@ class AuthService {
       } else {
         const user: User = {
           email,
-          id: '123',
+          password,
         };
         resolve(user);
       }

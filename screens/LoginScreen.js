@@ -50,6 +50,7 @@ const LoginScreen = props => {
       const value = await AsyncStorage.getItem('@token');
       if (value !== null) {
         const parseValue = JSON.parse(value);
+        console.log('got value: ', parseValue);
         AuthService.login(parseValue.email, parseValue.password)
           .then(user => {
             props.loginSuccess(user);

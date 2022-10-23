@@ -1,17 +1,5 @@
 import React, {useState, useEffect} from 'react';
-import {
-  SafeAreaView,
-  ScrollView,
-  ToastAndroid,
-  StyleSheet,
-  Text,
-  Button,
-  View,
-  Modal,
-  FlatList,
-  Image,
-  Pressable,
-} from 'react-native';
+import {StyleSheet, Text, Button, View, FlatList, Image} from 'react-native';
 import {bindActionCreators} from '@reduxjs/toolkit';
 import {login, loginSuccess, logout} from '../redux/Login.action';
 import {connect} from 'react-redux';
@@ -26,12 +14,10 @@ const HomeScreen = props => {
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedData, setSelectedData] = useState(undefined);
   const [unmutilated, setUnmutilated] = useState(undefined);
+  const [letters, setLetters] = useState(undefined);
 
   const logOutApi = async () => {
-    // console.log(props);
-    // props.logout();
     await AsyncStorage.removeItem('@token');
-
     AuthService.logOut()
       .then(user => {
         props.logout({});
@@ -51,7 +37,12 @@ const HomeScreen = props => {
       const temp = json.sort(function (a, b) {
         return a.name[0] > b.name[0] ? 1 : -1;
       });
-      console.log(temp);
+      const lett = [];
+      temp.forEach(item => lett.push(item?.name[0]));
+      const arr = lett.filter(function (value, index, array) {
+        return array.indexOf(value) === index;
+      });
+      setLetters(arr);
       setData(temp);
       setUnmutilated(temp);
     } catch (error) {
@@ -74,12 +65,10 @@ const HomeScreen = props => {
   };
 
   const filter = value => {
-    console.log(value);
     var re = new RegExp(value + '.+$', 'i');
     const temp = unmutilated.filter(function (e, i, a) {
       return e.name.search(re) != -1;
     });
-    console.log(temp);
     setData(temp);
   };
   return (
@@ -98,34 +87,58 @@ const HomeScreen = props => {
           onChangeText={filter}
         />
       </View>
-      <FlatList
-        data={data}
-        keyExtractor={(item, index) => index.toString()}
-        showsVerticalScrollIndicator={false}
-        renderItem={({item}) => (
-          <View style={styles.listItem}>
-            <Image
-              source={{uri: 'https://reactjs.org/logo-og.png'}}
-              style={styles.thumbnail}
-            />
-            <View style={{flex: 1}}>
-              <Text style={styles.name}>Name: {item.name}</Text>
-              <Text style={styles.email}>Email: {item.email}</Text>
-            </View>
-            <View style={styles.viewButton}>
-              <Button
-                title="View"
-                color="#4270d4"
-                onPress={() => {
-                  setModalVisible(true);
-                  storeData(item);
-                }}
-              />
-            </View>
-          </View>
-        )}
-        ListFooterComponent={() => <View style={{marginBottom: 100}}></View>}
-      />
+      {data ? (
+        <FlatList
+          data={letters}
+          keyExtractor={(item, index) => index.toString()}
+          showsVerticalScrollIndicator={false}
+          renderItem={({item, index}) => {
+            const test = [];
+            data.forEach((element, index) => {
+              if (element.name[0] === item) test.push(element);
+            });
+
+            return (
+              test.length > 0 && (
+                <>
+                  <Text style={styles.letter_text}>{item.toString()}</Text>
+                  {/* Start */}
+                  <FlatList
+                    data={test}
+                    keyExtractor={(item, index) => index.toString()}
+                    renderItem={({item}) => (
+                      <View style={styles.listItem}>
+                        <Image
+                          source={{uri: 'https://reactjs.org/logo-og.png'}}
+                          style={styles.thumbnail}
+                        />
+                        <View style={{flex: 1}}>
+                          <Text style={styles.name}>Name: {item.name}</Text>
+                          <Text style={styles.email}>Email: {item.email}</Text>
+                        </View>
+                        <View style={styles.viewButton}>
+                          <Button
+                            title="View"
+                            color="#4270d4"
+                            onPress={() => {
+                              setModalVisible(true);
+                              storeData(item);
+                            }}
+                          />
+                        </View>
+                      </View>
+                    )}
+                  />
+                  {/* End */}
+                </>
+              )
+            );
+          }}
+          ListFooterComponent={() => <View style={{marginBottom: 100}}></View>}
+        />
+      ) : (
+        <Text style={styles.text}>Loading Data from server...</Text>
+      )}
       {selectedData && (
         <CustomModal
           selectedData={selectedData}
@@ -169,6 +182,15 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     marginLeft: 10,
     color: textColor,
+  },
+  letter_text: {
+    fontSize: 20,
+    marginVertical: 10,
+    fontStyle: 'italic',
+    fontWeight: 'bold',
+    marginLeft: 10,
+    color: textColor,
+    marginBottom: -15,
   },
   listItem: {
     flex: 1,
